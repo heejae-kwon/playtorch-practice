@@ -14,6 +14,8 @@ import { SafeAreaView, StyleSheet } from 'react-native';
 import CameraScreen from './screens/CameraScreen';
 import LoadingScreen from './screens/LoadingScreen';
 import ResultsScreen from './screens/ResultsScreen';
+import { Image } from 'react-native-pytorch-core';
+import detectObjects from './ObjectDetector';
 
 const ScreenStates = {
   CAMERA: 0,
@@ -22,7 +24,7 @@ const ScreenStates = {
 };
 
 const App = () => {
-  const [image, setImage] = useState(null);
+  const [image, setImage] = useState<Image | null>(null);
   const [boundingBoxes, setBoundingBoxes] = useState(null);
   const [screenState, setScreenState] = useState(ScreenStates.CAMERA);
 
@@ -36,9 +38,15 @@ const App = () => {
     setBoundingBoxes(null);
   }, [image, setScreenState]);
 
+  async function handleImage(capturedImage: Image) {
+    console.log('Captured image', capturedImage)
+    await detectObjects(capturedImage)
+    capturedImage.release()
+  }
+
   return (
     <SafeAreaView style={styles.container}>
-      {screenState === ScreenStates.CAMERA && <CameraScreen />}
+      {screenState === ScreenStates.CAMERA && <CameraScreen onCapture={handleImage} />}
       {screenState === ScreenStates.LOADING && <LoadingScreen />}
       {screenState === ScreenStates.RESULTS && (
         <ResultsScreen
