@@ -7,8 +7,10 @@ import {
     TouchableOpacity,
     View,
     Platform,
+    LayoutRectangle,
 } from "react-native";
-import { Canvas } from "react-native-pytorch-core";
+import { Canvas, CanvasRenderingContext2D, Image } from "react-native-pytorch-core";
+import { BBox } from "../ObjectDetector";
 
 const objectColors = [
     "#FF3B30",
@@ -24,9 +26,15 @@ const objectColors = [
 
 const textBaselineAdjustment = Platform.OS == "ios" ? 7 : 4;
 
-export default function ResultsScreen({ image, boundingBoxes, onReset }) {
-    const [ctx, setCtx] = useState(null);
-    const [layout, setLayout] = useState(null);
+interface ResultsScreenProps {
+    image: Image,
+    boundingBoxes: BBox[],
+    onReset: () => Promise<void>
+}
+
+export default function ResultsScreen({ image, boundingBoxes, onReset }: ResultsScreenProps) {
+    const [ctx, setCtx] = useState<CanvasRenderingContext2D | null>(null);
+    const [layout, setLayout] = useState<LayoutRectangle | null>(null);
 
     // This is a drawImage function wrapped in useCallback (for improving render performance)
     useEffect(
@@ -89,21 +97,20 @@ export default function ResultsScreen({ image, boundingBoxes, onReset }) {
         [ctx, layout, image, boundingBoxes] // dependencies for useCallback
     );
     return (
-        <View style= { styles.container } >
-        <Canvas
-                style={ StyleSheet.absoluteFill }
-    onLayout = {(event) => {
-        setLayout(event.nativeEvent.layout);
-    }
-}
-onContext2D = { setCtx }
-    />
-    <View style={ styles.bottomContainer }>
-        <TouchableOpacity onPress={ onReset } style = { styles.resetButton } >
-            <Text style={ styles.buttonLabel }> Take another picture < /Text>
-                < /TouchableOpacity>
-                < /View>
-                < /View>
+        <View style={styles.container}>
+            <Canvas
+                style={StyleSheet.absoluteFill}
+                onLayout={(event) => {
+                    setLayout(event.nativeEvent.layout);
+                }}
+                onContext2D={setCtx}
+            />
+            <View style={styles.bottomContainer}>
+                <TouchableOpacity onPress={onReset} style={styles.resetButton}>
+                    <Text style={styles.buttonLabel}>Take another picture</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
     );
 }
 

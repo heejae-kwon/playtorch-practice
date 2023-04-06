@@ -15,7 +15,7 @@ import CameraScreen from './screens/CameraScreen';
 import LoadingScreen from './screens/LoadingScreen';
 import ResultsScreen from './screens/ResultsScreen';
 import { Image } from 'react-native-pytorch-core';
-import detectObjects from './ObjectDetector';
+import detectObjects, { BBox } from './ObjectDetector';
 
 const ScreenStates = {
   CAMERA: 0,
@@ -25,7 +25,7 @@ const ScreenStates = {
 
 const App = () => {
   const [image, setImage] = useState<Image | null>(null);
-  const [boundingBoxes, setBoundingBoxes] = useState(null);
+  const [boundingBoxes, setBoundingBoxes] = useState<BBox[] | null>(null);
   const [screenState, setScreenState] = useState(ScreenStates.CAMERA);
 
   // Handle the reset button and return to the camera capturing mode
@@ -38,10 +38,20 @@ const App = () => {
     setBoundingBoxes(null);
   }, [image, setScreenState]);
 
+  // This handler function handles the camera's capture event
   async function handleImage(capturedImage: Image) {
-    console.log('Captured image', capturedImage)
-    await detectObjects(capturedImage)
-    capturedImage.release()
+    setImage(capturedImage);
+    // Wait for image to process through YOLOv5 model and draw resulting image
+    setScreenState(ScreenStates.LOADING);
+    try {
+      const newBoxes = await detectObjects(capturedImage);
+      setBoundingBoxes(newBoxes);
+      // Switch to the ResultsScreen to display the detected objects
+      setScreenState(ScreenStates.RESULTS);
+    } catch (err) {
+      // In case something goes wrong, go back to the CameraScreen to take a new picture
+      handleReset();
+    }
   }
 
   return (
@@ -50,8 +60,8 @@ const App = () => {
       {screenState === ScreenStates.LOADING && <LoadingScreen />}
       {screenState === ScreenStates.RESULTS && (
         <ResultsScreen
-          image={image}
-          boundingBoxes={boundingBoxes}
+          image={image as Image}
+          boundingBoxes={boundingBoxes as BBox[]}
           onReset={handleReset}
         />
       )}
