@@ -7,10 +7,11 @@ import {
     torchvision,
 } from 'react-native-pytorch-core';
 import COCO_CLASSES from './CoCoClasses.json';
-import { IValue } from 'react-native-pytorch-core/lib/typescript/torchlive/torch';
+import * as fs from 'react-native-fs'
+import { getAssetPath, prepareAssets } from './AssetHelper';
 
 const T = torchvision.transforms;
-const IMAGE_SIZE = 640;
+const IMAGE_SIZE = 320;
 
 const MODEL_URL =
     'https://github.com/facebookresearch/playtorch/releases/download/v0.2.0/yolov5s.ptl';
@@ -174,9 +175,13 @@ export default async function detectObjects(image: Image) {
 
     // Load model if not loaded
     if (model == null) {
-        console.log('Loading model...');
+        console.log('Loading model...??');
+        await prepareAssets()
+        const u2netPath = getAssetPath('u2net_small.ptl')
+        console.log(u2netPath, 'U2NET_PATH')
         const filePath = await MobileModel.download(MODEL_URL);
-        model = await torch.jit._loadForMobile(filePath);
+        console.log(filePath, 'FILE_PATH')
+        model = await torch.jit._loadForMobile(u2netPath);
         console.log('Model successfully loaded');
     }
 
@@ -203,7 +208,7 @@ export default async function detectObjects(image: Image) {
         const nameIdx = result.classIndex;
         const name = COCO_CLASSES[nameIdx];
 
-        const match : BBox= {
+        const match: BBox = {
             objectClass: name,
             bounds: result.bounds,
         };
@@ -211,6 +216,6 @@ export default async function detectObjects(image: Image) {
         resultBoxes.push(match);
     }
 
-    console.log(resultBoxes);
+    console.log(output);
     return resultBoxes;
 }

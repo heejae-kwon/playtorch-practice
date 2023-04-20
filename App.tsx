@@ -14,8 +14,9 @@ import { SafeAreaView, StyleSheet } from 'react-native';
 import CameraScreen from './screens/CameraScreen';
 import LoadingScreen from './screens/LoadingScreen';
 import ResultsScreen from './screens/ResultsScreen';
-import { Image } from 'react-native-pytorch-core';
+import { Image, ImageUtil } from 'react-native-pytorch-core';
 import detectObjects, { BBox } from './ObjectDetector';
+import removeBackground from './Rembg';
 
 const ScreenStates = {
   CAMERA: 0,
@@ -24,28 +25,29 @@ const ScreenStates = {
 };
 
 const App = () => {
-  const [image, setImage] = useState<Image | null>(null);
-  const [boundingBoxes, setBoundingBoxes] = useState<BBox[] | null>(null);
+  const [inputImage, setInputImage] = useState<Image | null>(null);
+  const [rembgImage, setRembgImage] = useState<Image | null>(null);
   const [screenState, setScreenState] = useState(ScreenStates.CAMERA);
 
   // Handle the reset button and return to the camera capturing mode
   const handleReset = useCallback(async () => {
     setScreenState(ScreenStates.CAMERA);
-    if (image != null) {
-      await image.release();
+    if (inputImage != null) {
+      inputImage.release();
     }
-    setImage(null);
-    setBoundingBoxes(null);
-  }, [image, setScreenState]);
-
+    setInputImage(null);
+    setRembgImage(null);
+  }, [inputImage, setInputImage, setRembgImage, setScreenState]);
   // This handler function handles the camera's capture event
   async function handleImage(capturedImage: Image) {
-    setImage(capturedImage);
+    const testImg = await ImageUtil.fromBundle(require('./assets/image/prof1.jpg'))
+    setInputImage(testImg);
     // Wait for image to process through YOLOv5 model and draw resulting image
     setScreenState(ScreenStates.LOADING);
     try {
-      const newBoxes = await detectObjects(capturedImage);
-      setBoundingBoxes(newBoxes);
+      const newImage = await removeBackground(testImg);
+      setRembgImage(newImage)
+      //  setBoundingBoxes(newBoxes);
       // Switch to the ResultsScreen to display the detected objects
       setScreenState(ScreenStates.RESULTS);
     } catch (err) {
@@ -60,8 +62,7 @@ const App = () => {
       {screenState === ScreenStates.LOADING && <LoadingScreen />}
       {screenState === ScreenStates.RESULTS && (
         <ResultsScreen
-          image={image as Image}
-          boundingBoxes={boundingBoxes as BBox[]}
+          image={rembgImage as Image}
           onReset={handleReset}
         />
       )}

@@ -2,15 +2,15 @@ import * as React from "react";
 import { useEffect, useRef, useState } from "react";
 import {
     FlatList,
+    Image,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
     Platform,
-    LayoutRectangle,
+    LayoutRectangle
 } from "react-native";
-import { Canvas, CanvasRenderingContext2D, Image } from "react-native-pytorch-core";
-import { BBox } from "../ObjectDetector";
+import { Canvas, CanvasRenderingContext2D, Image as ImageType, } from "react-native-pytorch-core";
 
 const objectColors = [
     "#FF3B30",
@@ -26,13 +26,12 @@ const objectColors = [
 
 const textBaselineAdjustment = Platform.OS == "ios" ? 7 : 4;
 
-interface ResultsScreenProps {
-    image: Image,
-    boundingBoxes: BBox[],
-    onReset: () => Promise<void>
+type Props = {
+    image: ImageType | null;
+    onReset: () => void;
 }
 
-export default function ResultsScreen({ image, boundingBoxes, onReset }: ResultsScreenProps) {
+export default function ResultsScreen({ image, onReset }: Props) {
     const [ctx, setCtx] = useState<CanvasRenderingContext2D | null>(null);
     const [layout, setLayout] = useState<LayoutRectangle | null>(null);
 
@@ -54,48 +53,12 @@ export default function ResultsScreen({ image, boundingBoxes, onReset }: Results
                 const offsetX = (layout.width - displayWidth) / 2;
                 const offsetY = (layout.height - displayHeight) / 2;
                 ctx.drawImage(image, offsetX, offsetY, displayWidth, displayHeight);
-
-                // draw bounding boxes and label them, if provided
-                if (boundingBoxes) {
-                    ctx.font = `13px monospace`;
-                    ctx.fillStyle = "#000";
-                    ctx.textAlign = "left";
-
-                    boundingBoxes.forEach((boundingBox, index) => {
-                        const { objectClass, bounds } = boundingBox;
-                        const x = offsetX + bounds[0] * scale;
-                        const y = offsetY + bounds[1] * scale;
-                        const w = bounds[2] * scale;
-                        const h = bounds[3] * scale;
-
-                        const boxColor = objectColors[index % objectColors.length];
-                        ctx.strokeStyle = boxColor;
-                        ctx.lineWidth = 3;
-                        ctx.beginPath();
-                        ctx.rect(x, y, w, h);
-                        ctx.stroke();
-
-                        const textHorizontalPadding = 10;
-                        const textWidth =
-                            objectClass.length * 6 + 2 * textHorizontalPadding;
-                        ctx.strokeStyle = "#000";
-                        ctx.lineWidth = 25;
-                        ctx.lineCap = "round";
-                        ctx.beginPath();
-                        const textStartX = x + w / 2 - textWidth / 2;
-                        ctx.moveTo(textStartX, y);
-                        ctx.lineTo(textStartX + textWidth, y);
-                        ctx.stroke();
-
-                        ctx.fillStyle = "#fff";
-                        ctx.fillText(objectClass, textStartX, y + textBaselineAdjustment);
-                    });
-                    ctx.invalidate();
-                }
+                ctx.invalidate()
             }
         },
-        [ctx, layout, image, boundingBoxes] // dependencies for useCallback
+        [ctx, layout, image] // dependencies for useCallback
     );
+
     return (
         <View style={styles.container}>
             <Canvas
