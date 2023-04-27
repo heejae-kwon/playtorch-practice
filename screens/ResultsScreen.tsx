@@ -44,7 +44,7 @@ export default function ResultsScreen({ image, onReset }: Props) {
                 // Scale image to fit screen
                 const imageWidth = image.getWidth();
                 const imageHeight = image.getHeight();
-                const scale = Math.max(
+                const scale = Math.min(
                     layout.width / imageWidth,
                     layout.height / imageHeight
                 );

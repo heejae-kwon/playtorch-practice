@@ -58,7 +58,7 @@ export default async function removeBackground(image: Image) {
     // Load model if not loaded
     if (model == null) {
         console.log('Loading model...??');
-        await prepareAssets()
+        //await prepareAssets()
         const u2netPath = getAssetPath('u2net.ptl')
         console.log(u2netPath, 'U2NET_PATH')
         //const filePath = await MobileModel.download(MODEL_URL);

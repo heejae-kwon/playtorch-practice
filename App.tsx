@@ -9,14 +9,14 @@
  */
 
 import * as React from 'react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { SafeAreaView, StyleSheet } from 'react-native';
 import CameraScreen from './screens/CameraScreen';
 import LoadingScreen from './screens/LoadingScreen';
 import ResultsScreen from './screens/ResultsScreen';
 import { Image, ImageUtil } from 'react-native-pytorch-core';
-import detectObjects, { BBox } from './ObjectDetector';
-import removeBackground from './Rembg';
+import removeBackground from './src/Rembg';
+import { prepareAssets } from './src/AssetHelper';
 
 const ScreenStates = {
   CAMERA: 0,
@@ -38,14 +38,13 @@ const App = () => {
     setInputImage(null);
     setRembgImage(null);
   }, [inputImage, setInputImage, setRembgImage, setScreenState]);
+
   // This handler function handles the camera's capture event
   async function handleImage(capturedImage: Image) {
-    const testImg = await ImageUtil.fromBundle(require('./assets/image/prof1.jpg'))
-    setInputImage(testImg);
     // Wait for image to process through YOLOv5 model and draw resulting image
     setScreenState(ScreenStates.LOADING);
     try {
-      const newImage = await removeBackground(testImg);
+      const newImage = await removeBackground(inputImage!);
       setRembgImage(newImage)
       //  setBoundingBoxes(newBoxes);
       // Switch to the ResultsScreen to display the detected objects
@@ -55,6 +54,19 @@ const App = () => {
       handleReset();
     }
   }
+  async function loadAssets() {
+    const testImg = await ImageUtil.fromBundle(require('./assets/image/prof1.jpg'))
+    setInputImage(testImg);
+    await prepareAssets()
+  }
+
+  useEffect(() => {
+    loadAssets()
+
+    return () => {
+      console.log('컴포넌트가 화면에서 사라짐');
+    };
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
