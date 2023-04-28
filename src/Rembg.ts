@@ -41,7 +41,6 @@ export default async function removeBackground(image: Image) {
     tensor = tensor.permute([2, 0, 1]);
 
     // Divide the tensor values by 255 to get values between [0, 1]
-    tensor = tensor.div(255);
 
     // Resize the image tensor to 3 x min(height, IMAGE_SIZE) x min(width, IMAGE_SIZE)
     const resize = T.resize([IMAGE_SIZE, IMAGE_SIZE]);
@@ -51,6 +50,9 @@ export default async function removeBackground(image: Image) {
     const centerCrop = T.centerCrop([IMAGE_SIZE]);
     tensor = centerCrop(tensor);
 
+    const originImageArray = tensor.data()
+
+    tensor = tensor.div(255);
 
     // Unsqueeze adds 1 leading dimension to the tensor
     tensor = tensor.unsqueeze(0);
@@ -78,7 +80,27 @@ export default async function removeBackground(image: Image) {
     // and convert the tensor to uint8 tensor
     outputTensor = outputTensor.mul(255).to({ dtype: torch.uint8 });
 
-    const outputImage = media.imageFromTensor(outputTensor);
+    const outputs = outputTensor.data()
+    const newImageArray = new Array(IMAGE_SIZE * IMAGE_SIZE * 4).fill(0)
+
+    const width = IMAGE_SIZE
+    const height = IMAGE_SIZE
+    // width
+    for (let j = 0; j < IMAGE_SIZE; ++j) {
+        //  height
+        for (let k = 0; k < IMAGE_SIZE; ++k) {
+            const offset = j * width + k
+            if (outputs[offset] > 0) {
+                newImageArray[0 * (width * height) + offset] = originImageArray[0 * (width * height) + offset]
+                newImageArray[1 * (width * height) + offset] = originImageArray[1 * (width * height) + offset]
+                newImageArray[2 * (width * height) + offset] = originImageArray[2 * (width * height) + offset]
+                newImageArray[3 * (width * height) + offset] = 255
+            }
+        }
+    }
+
+
+    const outputImage = media.imageFromTensor(torch.tensor(newImageArray).reshape([4, IMAGE_SIZE, IMAGE_SIZE]).to({ dtype: torch.uint8 }));
 
     // Convert the tensor to an image
     return outputImage;

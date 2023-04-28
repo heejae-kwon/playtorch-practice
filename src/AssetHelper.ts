@@ -15,10 +15,12 @@ export function getAssetPath(assetName: string) {
     return AssetList.find(value => value.name === assetName)?.path!
 }
 
+/*
 export async function readAsset(name: string, encodingOption: string) {
     return await RNFS.readFileAssets(name, encodingOption)
 }
 
-export function isAssetsPrepared() {
+function isAssetsPrepared() {
     return AssetList.length !== 0
 }
+*/
