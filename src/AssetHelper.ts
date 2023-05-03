@@ -8,7 +8,6 @@ export async function prepareAssets() {
     }
 
     AssetList = await RNFS.readDir(RNFS.CachesDirectoryPath) // On Android, use "RNFS.DocumentDirectoryPath" (MainBundlePath is not defined)
-    console.log(AssetList)
 }
 
 export function getAssetPath(assetName: string) {

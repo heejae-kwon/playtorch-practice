@@ -90,7 +90,7 @@ export default async function removeBackground(image: Image) {
         //  height
         for (let k = 0; k < IMAGE_SIZE; ++k) {
             const offset = j * width + k
-            if (outputs[offset] > 0) {
+            if (outputs[offset] > 127) {
                 newImageArray[0 * (width * height) + offset] = originImageArray[0 * (width * height) + offset]
                 newImageArray[1 * (width * height) + offset] = originImageArray[1 * (width * height) + offset]
                 newImageArray[2 * (width * height) + offset] = originImageArray[2 * (width * height) + offset]
@@ -99,8 +99,10 @@ export default async function removeBackground(image: Image) {
         }
     }
 
-
-    const outputImage = media.imageFromTensor(torch.tensor(newImageArray).reshape([4, IMAGE_SIZE, IMAGE_SIZE]).to({ dtype: torch.uint8 }));
+    let outputImageTensor = torch.tensor(newImageArray).reshape([4, IMAGE_SIZE, IMAGE_SIZE]).to({ dtype: torch.uint8 })
+    const resizeToOuputSize = T.resize([320, 320], 'bilinear', 320,true)
+    outputImageTensor = resizeToOuputSize(outputImageTensor)
+    const outputImage = media.imageFromTensor(outputImageTensor);
 
     // Convert the tensor to an image
     return outputImage;
